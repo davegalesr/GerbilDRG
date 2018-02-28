@@ -74,13 +74,13 @@
             <param name="Grey_multiplier" type="float" min="0.5" max="1.8" gui-text="Compression/expansion (gray scale option)">1.0</param>	
             
             <!-- Velocità Nero e spostamento -->
-            <param name="speed_ON" type="int" min="1" max="3000" appearance="full" gui-text="Engraving speed">800</param>
+            <param name="speed_ON" type="int" min="1" max="3000" appearance="full" gui-text="Engraving speed">1000</param>
             
             <!-- $30 Value   DRG  -->
             <param name="change30" type="boolean" gui-text="Modify $30 Value?">false</param>
-            <param name="30warn" type="description">Sends a $30=xxxx command at start of job. CAUTION - Becomes permanent in EEPROM after >10,000 times
+            <param name="30warn" type="description">Sends a $30=xxxx command at start of job. CAUTION - Becomes permanant in EEPROM after 10,000 times
             USE ONLY WHEN NECESSARY</param-->
-            <param name="30_Value" type="int" min="1" max="4000" appearance="full" gui-text="$30 Value">2048</param>
+            <param name="30_Value" type="int" min="1" max="3000" appearance="full" gui-text="$30 Value">1000</param>
             
             
         </page>
@@ -94,7 +94,7 @@
             <!-- Homing -->
             <param name="homing" type="enum" gui-text="Homing ?">
                     <_item value="1">Yes - $H </_item>
-                    <_item value="2">Yes - G0 relative</_item>
+                    <_item value="2">Yes - G0</_item>
                     <_item value="3">No Homing</_item>
             </param>
 
@@ -102,6 +102,10 @@
             <param name="30warn" type="description">Offsets from current position to the right by X-Offset and down by Y-Offset at start of engraving.  Gives a left and top margin and can help to center work on the target canvas.</param-->
             <param name="xoffset" type="float" precision="2" min="0" max="100" _gui-text="G0 X-Offset from left home position in milimeters:">0.00</param>
             <param name="yoffset" type="float" precision="2" min="0" max="100" _gui-text="G0 Y-Offset from top home position in milimeters:">0.00</param-->	
+
+            <param name="speedup" type="int" min="1000" max="10000" appearance="full" gui-text="Whitespace acceleration">3000</param>
+            <param name="speedupmsg" type="description">Additional speed for accelerating over whitespace</param-->
+
 
             <param name="laseron" type="string"  gui-text="Laser ON Command">M4</param>
 

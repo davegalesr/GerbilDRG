@@ -74,7 +74,9 @@ class GcodeExport(inkex.Effect):
 		self.OptionParser.add_option("","--grayscale_resolution",action="store", type="int", dest="grayscale_resolution", default="1",help="") 
 		
 		#Velocita Nero e spostamento
-		self.OptionParser.add_option("","--speed_ON",action="store", type="int", dest="speed_ON", default="200",help="") 
+		self.OptionParser.add_option("","--speed_ON",action="store", type="int", dest="speed_ON", default="200",help="")
+		self.OptionParser.add_option("", "--speedupmsg",action="store", type="string", dest="speedupmsg", default="",help="Acceleration for bupassing whitespace msg") #DRG2
+		self.OptionParser.add_option("","--speedup",action="store", type="string", dest="speedup", default="3000",help="") #DRG2
 
                 # $30 Value  DRG
 		self.OptionParser.add_option("","--30_Value",action="store", type="int", dest="PWM_Value", default="1000",help="$30 value") #DRG
@@ -458,7 +460,9 @@ class GcodeExport(inkex.Effect):
 			Scala = self.options.resolution
 
 			F_G01 = self.options.speed_ON
-			F_G00 = '3000' #travel speed
+			F_G00 = self.options.speedup #acceleration to bypass whitespace DRG2
+			#F_G00 = '3000' #travel speed
+			S_PWM = '0'  #DRG2
 			file_gcode = open(pos_file_gcode, 'w')  #Creo il file
 			
 			#Configurazioni iniziali standard Gcode
@@ -539,6 +543,13 @@ class GcodeExport(inkex.Effect):
 				for y in range(h):
 					if y % 2 == 0 :
 						for x in range(w):
+							F_PWM = self.options.Grey_multiplier*(255 + self.options.Grey_offset - matrice_BN[y][x])  #DRG2
+							if F_PWM > 0:  #DRG2
+								pass  #DRG2
+							elif F_PWM == 0:  #DRG2
+								pass  #DRG2
+							else:  #DRG
+								F_PWM = 0  #DRG
 							if matrice_BN[y][x] != B :
 								if Laser_ON == False :
 									#Y axis move, no lasering
@@ -556,12 +567,14 @@ class GcodeExport(inkex.Effect):
 										
 									else: 
 										if matrice_BN[y][x+1] == B :	
-											file_gcode.write('G1X' + str(round((float(x+1)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G01) + ' S' + str(self.options.Grey_multiplier*(255 + self.options.Grey_offset - matrice_BN[y][x])) +'\n') #
+											file_gcode.write('G1X' + str(round((float(x+1)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G01) + ' S' + str(F_PWM) + '\n')  #DRG2
+											#DRG2 file_gcode.write('G1X' + str(round((float(x+1)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G01) + ' S' + str(self.options.Grey_multiplier*(255 + self.options.Grey_offset - matrice_BN[y][x])) +'\n') #
 											Laser_ON = False
 											
 										elif matrice_BN[y][x] != matrice_BN[y][x+1] :
 											if (255 - matrice_BN[y][x]) > 70 :
-												file_gcode.write('G1X' + str(round((float(x+1)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G01) + ' S' + str(self.options.Grey_multiplier*(255 + self.options.Grey_offset - matrice_BN[y][x])) +'\n') #was x+1
+												file_gcode.write('G1X' + str(round((float(x+1)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G01) + ' S' + str(F_PWM) +'\n') #DRG2
+												#DRG2 file_gcode.write('G1X' + str(round((float(x+1)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G01) + ' S' + str(self.options.Grey_multiplier*(255 + self.options.Grey_offset - matrice_BN[y][x])) +'\n') #was x+1
 												#file_gcode.write(self.options.laseron + '\n')												
 											else : file_gcode.write('G1X' + str(round((float(x+1)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G00) + ' S0' +'\n') #was x+1
 											#DRG else : file_gcode.write('G1X' + str(round((float(x+1)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G00) + ' S' + str(self.options.Grey_multiplier*(255 + self.options.Grey_offset - matrice_BN[y][x])) +'\n') #was x+1
@@ -569,6 +582,13 @@ class GcodeExport(inkex.Effect):
 					
 					else:
 						for x in reversed(range(w)):
+							F_PWM = self.options.Grey_multiplier*(255 + self.options.Grey_offset - matrice_BN[y][x])  #DRG2
+							if F_PWM > 0:  #DRG2
+								pass  #DRG2
+							elif F_PWM == 0:  #DRG2
+								pass  #DRG2
+							else:  #DRG
+								F_PWM = 0  #DRG
 							if matrice_BN[y][x] != B :
 								if Laser_ON == False :
 									#Y axis move no lavering
@@ -586,13 +606,15 @@ class GcodeExport(inkex.Effect):
 										
 									else: 
 										if matrice_BN[y][x-1] == B :
-											file_gcode.write('G1X' + str(round((float(x)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G01) + str(self.options.Grey_multiplier*(255 + self.options.Grey_offset - matrice_BN[y][x])) +'\n')
+											file_gcode.write('G1X' + str(round((float(x)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G01) + ' S' + str(F_PWM) +'\n') #DRG2
+											#DRG2 file_gcode.write('G1X' + str(round((float(x)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G01) + str(self.options.Grey_multiplier*(255 + self.options.Grey_offset - matrice_BN[y][x])) +'\n')
 											#file_gcode.write(self.options.laseroff + '\n')
 											Laser_ON = False
 											
 										elif  matrice_BN[y][x] != matrice_BN[y][x-1] :
 											if (255 - matrice_BN[y][x]) > 70 :
-												file_gcode.write('G1X' + str(round((float(x)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G01) + ' S' + str(self.options.Grey_multiplier*(255 + self.options.Grey_offset - matrice_BN[y][x])) +'\n') # was x-1
+												file_gcode.write('G1X' + str(round((float(x)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G01) + ' S' + str(F_PWM) + '\n') #DRG2
+												#drg2 file_gcode.write('G1X' + str(round((float(x)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G01) + ' S' + str(self.options.Grey_multiplier*(255 + self.options.Grey_offset - matrice_BN[y][x])) +'\n') # was x-1
 												#file_gcode.write(self.options.laseron +'\n')
 											else : file_gcode.write('G1X' + str(round((float(x)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G00) + ' S0' +'\n') # was x-1
 											#DRG else : file_gcode.write('G1X' + str(round((float(x)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G00) + ' S' + str(self.options.Grey_multiplier*(255 + self.options.Grey_offset - matrice_BN[y][x])) +'\n') # was x-1
