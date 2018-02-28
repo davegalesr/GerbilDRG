@@ -76,6 +76,12 @@ class GcodeExport(inkex.Effect):
 		#Velocita Nero e spostamento
 		self.OptionParser.add_option("","--speed_ON",action="store", type="int", dest="speed_ON", default="200",help="") 
 
+                # $30 Value  DRG
+		self.OptionParser.add_option("","--30_Value",action="store", type="int", dest="PWM_Value", default="1000",help="$30 value") #DRG
+		self.OptionParser.add_option("","--change30",action="store", type="inkbool", dest="change30", default=False,help="whether to send $30") #DRG
+		self.OptionParser.add_option("", "--30warn",action="store", type="string", dest="set30", default="30warn",help="$30 caution message will be modified below") #DRG
+		self.OptionParser.add_option("", "--tab",action="store", type="string", dest="tab", default="/page_1/",help="The active tab when Apply was pressed") #DRG
+
 		# Mirror Y
 		self.OptionParser.add_option("","--flip_y",action="store", type="inkbool", dest="flip_y", default=False,help="")
 		
@@ -84,6 +90,7 @@ class GcodeExport(inkex.Effect):
 		
 		# Offset
 		self.OptionParser.add_option("","--offset",action="store", type="inkbool", dest="offset", default=False,help="Offset")
+		self.OptionParser.add_option("", "--offsetd",action="store", type="string", dest="offsetd", default="offsetd",help="Offset description")  #DRG
 		self.OptionParser.add_option("","--xoffset",action="store", type="string", dest="xoffset", default="0.0", help="X offset from zero")
 		self.OptionParser.add_option("","--yoffset",action="store", type="string", dest="yoffset", default="0.0", help="Y offset from zero")
 		
@@ -99,8 +106,7 @@ class GcodeExport(inkex.Effect):
 		#inkex.errormsg("BLA BLA BLA Messaggio da visualizzare") #DEBUG
 
 
-		
-		
+          
 ######## 	Richiamata da __init__()
 ########	Qui si svolge tutto
 	def effect(self):
@@ -108,6 +114,7 @@ class GcodeExport(inkex.Effect):
 
 		current_file = self.args[-1]
 		bg_color = self.options.bg_color
+		
 		
 		
 		##Implementare check_dir
@@ -186,8 +193,9 @@ class GcodeExport(inkex.Effect):
 					self.GcodetoController(port,pos_file_gcode,pos_file_log)
 		else:
 			inkex.errormsg("Directory does not exist! Please specify existing directory!")
-            
 
+	
+		
             
             
 ########	ESPORTA L IMMAGINE IN PNG		
@@ -456,7 +464,7 @@ class GcodeExport(inkex.Effect):
 			#Configurazioni iniziali standard Gcode
 			file_gcode.write('; Generated with:\n; "Grbl compatible Raster2LaserGcode generator"\n; by 305 Engineering and Awesome.tech\n; Modified for K40Controller\n;\n;\n')
 			#HOMING
-			file_gcode.write('$X\n')
+			file_gcode.write('$X\n')			
 
 			if self.options.homing == 1:
 				file_gcode.write('$H\n')
@@ -465,14 +473,21 @@ class GcodeExport(inkex.Effect):
 			else:
 				pass
 			if self.options.offset == True:
-				file_gcode.write('G0 X-' + self.options.xoffset + ' Y-' + self.options.yoffset + ' \n')
+				file_gcode.write('G0 X+' + self.options.xoffset + ' Y' + self.options.yoffset + ' \n')
+				#DRG file_gcode.write('G0 X-' + self.options.xoffset + ' Y-' + self.options.yoffset + ' \n')
 				#file_gcode.write('G90\n')
 			else:
-				pass		
+				pass
+			if self.options.change30 == True:  #DRG
+				self.options.set30=('$30=' + str(self.options.PWM_Value) +'\n')  #DRG				
+			else:  #DRG
+				self.options.set30 = 'S0\n'	#DRG	
 			file_gcode.write('G21\n')			
 			file_gcode.write('G90\n')
 			file_gcode.write('G92 X0.0 Y0.0\n')
-			file_gcode.write(self.options.laseron +'\n')							
+			file_gcode.write(self.options.laseron +'\n')
+			
+			#file_gcode.write(self.options.set30)  #DRG Temp debug code
 	
 			#Creazione del Gcode
 			
@@ -527,13 +542,15 @@ class GcodeExport(inkex.Effect):
 							if matrice_BN[y][x] != B :
 								if Laser_ON == False :
 									#Y axis move, no lasering
-									file_gcode.write('G1 X' + str(round((float(x)/Scala),2)) + ' Y' + str(round((float(y)/Scala),2))  + ' F' + str(F_G00) + '\n')
+									file_gcode.write('G1 X' + str(round((float(x)/Scala),2)) + ' Y' + str(round((float(y)/Scala),2))  + ' F' + str(F_G00) + ' S0' + '\n')
+									#DRG file_gcode.write('G1 X' + str(round((float(x)/Scala),2)) + ' Y' + str(round((float(y)/Scala),2))  + ' F' + str(F_G00) + '\n')
 									#file_gcode.write(self.options.laseron + '\n')
 									Laser_ON = True
 									
 								if  Laser_ON == True :   #DEVO evitare di uscire dalla matrice
 									if x == w-1 : #end of line check stop lasering
-										file_gcode.write('G1X' + str(round((float(x)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) +' F' + str(F_G00) + '\n')
+										file_gcode.write('G1X' + str(round((float(x)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) +' F' + str(F_G00) + ' S0' + '\n')
+										#DRG file_gcode.write('G1X' + str(round((float(x)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) +' F' + str(F_G00) + '\n')
 										#file_gcode.write(self.options.laseroff + '\n')
 										Laser_ON = False
 										
@@ -546,7 +563,8 @@ class GcodeExport(inkex.Effect):
 											if (255 - matrice_BN[y][x]) > 70 :
 												file_gcode.write('G1X' + str(round((float(x+1)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G01) + ' S' + str(self.options.Grey_multiplier*(255 + self.options.Grey_offset - matrice_BN[y][x])) +'\n') #was x+1
 												#file_gcode.write(self.options.laseron + '\n')												
-											else : file_gcode.write('G1X' + str(round((float(x+1)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G00) + ' S' + str(self.options.Grey_multiplier*(255 + self.options.Grey_offset - matrice_BN[y][x])) +'\n') #was x+1
+											else : file_gcode.write('G1X' + str(round((float(x+1)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G00) + ' S0' +'\n') #was x+1
+											#DRG else : file_gcode.write('G1X' + str(round((float(x+1)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G00) + ' S' + str(self.options.Grey_multiplier*(255 + self.options.Grey_offset - matrice_BN[y][x])) +'\n') #was x+1
 												#file_gcode.write(self.options.laseron + '\n')
 					
 					else:
@@ -554,13 +572,15 @@ class GcodeExport(inkex.Effect):
 							if matrice_BN[y][x] != B :
 								if Laser_ON == False :
 									#Y axis move no lavering
-									file_gcode.write('G1 X' + str(round((float(x+1)/Scala),2)) + ' Y' + str(round((float(y)/Scala),2))  + ' F' + str(F_G00) + ' \n')
+									file_gcode.write('G1 X' + str(round((float(x+1)/Scala),2)) + ' Y' + str(round((float(y)/Scala),2))  + ' F' + str(F_G00) + ' S0' + ' \n')
+									#DRG file_gcode.write('G1 X' + str(round((float(x+1)/Scala),2)) + ' Y' + str(round((float(y)/Scala),2))  + ' F' + str(F_G00) + ' \n')
 									#file_gcode.write(self.options.laseron +'\n')
 									Laser_ON = True
 									
 								if  Laser_ON == True :   #DEVO evitare di uscire dalla matrice
 									if x == 0 : #return line end check stop lasering
-										file_gcode.write('G1X' + str(round((float(x)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) +' F' + str(F_G01) + '\n')
+										file_gcode.write('G1X' + str(round((float(x)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) +' F' + str(F_G00) + ' S0' + '\n')
+										#DRG file_gcode.write('G1X' + str(round((float(x)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) +' F' + str(F_G01) + '\n')
 										#file_gcode.write(self.options.laseroff + '\n')
 										Laser_ON = False
 										
@@ -574,7 +594,8 @@ class GcodeExport(inkex.Effect):
 											if (255 - matrice_BN[y][x]) > 70 :
 												file_gcode.write('G1X' + str(round((float(x)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G01) + ' S' + str(self.options.Grey_multiplier*(255 + self.options.Grey_offset - matrice_BN[y][x])) +'\n') # was x-1
 												#file_gcode.write(self.options.laseron +'\n')
-											else : file_gcode.write('G1X' + str(round((float(x)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G00) + ' S' + str(self.options.Grey_multiplier*(255 + self.options.Grey_offset - matrice_BN[y][x])) +'\n') # was x-1
+											else : file_gcode.write('G1X' + str(round((float(x)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G00) + ' S0' +'\n') # was x-1
+											#DRG else : file_gcode.write('G1X' + str(round((float(x)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G00) + ' S' + str(self.options.Grey_multiplier*(255 + self.options.Grey_offset - matrice_BN[y][x])) +'\n') # was x-1
 												#file_gcode.write(self.options.laseron +'\n')
 			
 			
@@ -599,6 +620,7 @@ class GcodeExport(inkex.Effect):
 		REPORT_INTERVAL = 1.0 # seconds
 
 		is_run = True # Controls query timer
+		global set30
 
 		verbose = False
 		settings_mode = False
@@ -609,17 +631,21 @@ class GcodeExport(inkex.Effect):
 		# Initialize
 		try:
 			s = serial.Serial(port[0],BAUD_RATE)
-			s.writeTimeout = 0.2
-			s.timeout = 0.2	
+			s.writeTimeout = 2.0   #DRG
+			s.timeout = 2.0   #DRG	
 			s.flushInput()
 			s.flushOutput()
 			#print "Initializing Grbl..."
-			s.write("\r\n\r\n")
+			s.write("\r\n\r\n")			
 			# Wait for grbl to initialize and flush startup text in serial input
 			#time.sleep(3)
 			#s.write("$X\n")
 			time.sleep(3.0)
 			s.flushInput()
+			s.write(self.options.set30)    #DRG
+			#s.write('\$\n')   #DRG
+			time.sleep(3.0)   #DRG
+			s.flushInput()   #DRG
 			start_time = time.time();
 			# Stream g-code to grbl
 			l_count = 0
