@@ -3,6 +3,7 @@
 # Copyright (C) 2014 305engineering <305engineering@gmail.com>
 # Original concept by 305engineering.
 # Adapted for Grbl Arduino Uno K40 Laser Controller
+# awesome.tech
 # "THE MODIFIED BEER-WARE LICENSE" (Revision: my own :P):
 # <305engineering@gmail.com> wrote this file. As long as you retain this notice you
 # can do whatever you want with this stuff (except sell). If we meet some day, 
@@ -68,6 +69,8 @@ class GcodeExport(inkex.Effect):
 		# Opzioni modalita 
 		self.OptionParser.add_option("","--BW_threshold",action="store", type="int", dest="BW_threshold", default="128",help="") 
 		self.OptionParser.add_option("","--BWBlackvalue",action="store", type="int", dest="BWBlackvalue", default="254",help="") 
+		self.OptionParser.add_option("","--Grey_multiplier",action="store", type="float", dest="Grey_multiplier", default="1.0",help="") 
+		self.OptionParser.add_option("","--Grey_offset",action="store", type="int", dest="Grey_offset", default="0",help="") 
 		self.OptionParser.add_option("","--grayscale_resolution",action="store", type="int", dest="grayscale_resolution", default="1",help="") 
 		
 		#Velocita Nero e spostamento
@@ -240,7 +243,7 @@ class GcodeExport(inkex.Effect):
 			for y in range(h): # y varia da 0 a h-1
 				for x in range(w): # x varia da 0 a w-1
 					pixel_position = (x + y * w)*4 if metadata['alpha'] else (x + y * w)*3
-					matrice[y][x] = int(pixels[pixel_position]*0.21 + pixels[(pixel_position+1)]*0.71 + pixels[(pixel_position+2)]*0.07)
+					matrice[y][x] = int(pixels[pixel_position]*0.21 + pixels[(pixel_position+1)]*0.71 + pixels[(pixel_position+2)]*0.07) #matrice[y][x] = int(pixels[pixel_position]*0.21 + pixels[(pixel_position+1)]*0.71 + pixels[(pixel_position+2)]*0.07)
 		
 		elif self.options.grayscale_type == 2:
 			#(R+G+B)/3
@@ -413,15 +416,15 @@ class GcodeExport(inkex.Effect):
 			else:
 				for y in range(h): 
 					for x in range(w): 
-						if matrice[y][x] <= 1:
+						if matrice[y][x] <= 0:
 							matrice_BN[y][x] == 0
 							
-						if matrice[y][x] >= 254:
+						if matrice[y][x] >= 255:
 							matrice_BN[y][x] == 255
 						
-						if matrice[y][x] >= 0 and matrice[y][x] <254:
+						if matrice[y][x] >= 0 and matrice[y][x] <255:
 							matrice_BN[y][x] = ( matrice[y][x] // self.options.grayscale_resolution ) * self.options.grayscale_resolution
-						
+							#matrice_BN[y][x] = (( matrice_BN[y][x] - 70 ) * 1.3)
 			
 			
 		####Ora matrice_BN contiene l'immagine in Bianco (255) e Nero (0)
@@ -535,15 +538,15 @@ class GcodeExport(inkex.Effect):
 										Laser_ON = False
 										
 									else: 
-										if matrice_BN[y][x+1] == B :
-											file_gcode.write('G1X' + str(round((float(x+1)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G01) + ' S' + str(255 - matrice_BN[y][x]) +'\n')
+										if matrice_BN[y][x+1] == B :	
+											file_gcode.write('G1X' + str(round((float(x+1)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G01) + ' S' + str(self.options.Grey_multiplier*(255 + self.options.Grey_offset - matrice_BN[y][x])) +'\n') #
 											Laser_ON = False
 											
 										elif matrice_BN[y][x] != matrice_BN[y][x+1] :
 											if (255 - matrice_BN[y][x]) > 70 :
-												file_gcode.write('G1X' + str(round((float(x+1)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G01) + ' S' + str(255 - matrice_BN[y][x]) +'\n') #was x+1
+												file_gcode.write('G1X' + str(round((float(x+1)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G01) + ' S' + str(self.options.Grey_multiplier*(255 + self.options.Grey_offset - matrice_BN[y][x])) +'\n') #was x+1
 												#file_gcode.write(self.options.laseron + '\n')												
-											else : file_gcode.write('G1X' + str(round((float(x+1)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G00) + ' S' + str(255 - matrice_BN[y][x]) +'\n') #was x+1
+											else : file_gcode.write('G1X' + str(round((float(x+1)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G00) + ' S' + str(self.options.Grey_multiplier*(255 + self.options.Grey_offset - matrice_BN[y][x])) +'\n') #was x+1
 												#file_gcode.write(self.options.laseron + '\n')
 					
 					else:
@@ -563,15 +566,15 @@ class GcodeExport(inkex.Effect):
 										
 									else: 
 										if matrice_BN[y][x-1] == B :
-											file_gcode.write('G1X' + str(round((float(x)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G01) + str(255 - matrice_BN[y][x]) +'\n')
+											file_gcode.write('G1X' + str(round((float(x)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G01) + str(self.options.Grey_multiplier*(255 + self.options.Grey_offset - matrice_BN[y][x])) +'\n')
 											#file_gcode.write(self.options.laseroff + '\n')
 											Laser_ON = False
 											
 										elif  matrice_BN[y][x] != matrice_BN[y][x-1] :
 											if (255 - matrice_BN[y][x]) > 70 :
-												file_gcode.write('G1X' + str(round((float(x)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G01) + ' S' + str(255 - matrice_BN[y][x]) +'\n') # was x-1
+												file_gcode.write('G1X' + str(round((float(x)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G01) + ' S' + str(self.options.Grey_multiplier*(255 + self.options.Grey_offset - matrice_BN[y][x])) +'\n') # was x-1
 												#file_gcode.write(self.options.laseron +'\n')
-											else : file_gcode.write('G1X' + str(round((float(x)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G00) + ' S' + str(255 - matrice_BN[y][x]) +'\n') # was x-1
+											else : file_gcode.write('G1X' + str(round((float(x)/Scala),2)) + 'Y' + str(round((float(y)/Scala),2)) + ' F' + str(F_G00) + ' S' + str(self.options.Grey_multiplier*(255 + self.options.Grey_offset - matrice_BN[y][x])) +'\n') # was x-1
 												#file_gcode.write(self.options.laseron +'\n')
 			
 			
