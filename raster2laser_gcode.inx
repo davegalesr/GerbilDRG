@@ -98,13 +98,34 @@
                     <_item value="3">No Homing</_item>
             </param>
 
+            <!-- G54-G59 workspace coordinates -->
+            
+            <param name="g54_value" type="enum" gui-text="Workspace Coordinates ">
+                    <_item value="0">No G54-G59 (Work position X0 Y0)</_item>
+                    <_item value="1">Use G55 (Work position 1)</_item>
+                    <_item value="2">Use G56 (Work position 2)</_item>
+                    <_item value="3">Use G57 (Work position 3)</_item>
+                    <_item value="4">Use G58 (Work position 4)</_item>
+                    <_item value="5">Use G59 (Work position 5)</_item>
+            </param>
+            <param name="g54_msg" type="description">Uses values you set for G55-G59 as workspace coordinates at start of engraving.  Returns to the position you set for G54 at end of job.</param-->
+            
             <param name="offset" type="boolean" gui-text="G0 XY Offsets from true home.">false</param>
-            <param name="30warn" type="description">Offsets from current position to the right by X-Offset and down by Y-Offset at start of engraving.  Gives a left and top margin and can help to center work on the target canvas.</param-->
+            <param name="offsetd" type="description">Offsets from current position to the right by X-Offset and down by Y-Offset at start of engraving.  Gives a left and top margin and can help to center work on the target canvas.</param-->
             <param name="xoffset" type="float" precision="2" min="0" max="100" _gui-text="G0 X-Offset from left home position in milimeters:">0.00</param>
             <param name="yoffset" type="float" precision="2" min="0" max="100" _gui-text="G0 Y-Offset from top home position in milimeters:">0.00</param-->	
+        
+            
+        </page>
 
+        
+    <page name="page_3" gui-text="PAGE 3">
+    
             <param name="speedup" type="int" min="1000" max="10000" appearance="full" gui-text="Whitespace acceleration">3000</param>
             <param name="speedupmsg" type="description">Additional speed for accelerating over whitespace</param-->
+
+            <param name="minPWM" type="int" min="30" max="100" appearance="full" gui-text="Minimum PWM">70</param>
+            <param name="minPWMmsg" type="description">PWM less than this will be changed to S0 since it is too light to be visible - 70 is the default</param-->
 
 
             <param name="laseron" type="string"  gui-text="Laser ON Command">M4</param>
